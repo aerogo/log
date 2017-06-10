@@ -2,6 +2,7 @@ package log
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"time"
 )
@@ -31,7 +32,27 @@ func (channel *Channel) AddOutput(writer io.Writer) {
 }
 
 // Info ...
-func (channel *Channel) Info(values ...string) {
+func (channel *Channel) Info(values ...interface{}) {
+	channel.write(values...)
+}
+
+// Warn ...
+func (channel *Channel) Warn(values ...interface{}) {
+	channel.write(values...)
+}
+
+// Error ...
+func (channel *Channel) Error(values ...interface{}) {
+	channel.write(values...)
+
+	// Flush on errors
+	for _, output := range channel.outputs {
+		output.writer.Flush()
+	}
+}
+
+// write ...
+func (channel *Channel) write(values ...interface{}) {
 	now := time.Now().Format(time.StampMilli)
 
 	for _, output := range channel.outputs {
@@ -40,13 +61,7 @@ func (channel *Channel) Info(values ...string) {
 		output.writer.WriteString(now)
 		output.writer.WriteByte('\t')
 
-		for num, value := range values {
-			output.writer.WriteString(value)
-
-			if num >= 1 {
-				output.writer.WriteByte(' ')
-			}
-		}
+		fmt.Fprint(output.writer, values...)
 		output.writer.WriteByte('\n')
 
 		output.mutex.Unlock()
