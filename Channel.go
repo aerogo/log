@@ -19,6 +19,16 @@ func NewChannel(name string) *Channel {
 		name: name,
 	}
 
+	go func() {
+		ticker := time.NewTicker(250 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			<-ticker.C
+			channel.Flush()
+		}
+	}()
+
 	return channel
 }
 
@@ -36,18 +46,18 @@ func (channel *Channel) Info(values ...interface{}) {
 	channel.write(values...)
 }
 
-// Warn ...
-func (channel *Channel) Warn(values ...interface{}) {
-	channel.write(values...)
-}
-
 // Error ...
 func (channel *Channel) Error(values ...interface{}) {
 	channel.write(values...)
+	channel.Flush()
+}
 
-	// Flush on errors
+// Flush ...
+func (channel *Channel) Flush() {
 	for _, output := range channel.outputs {
+		output.mutex.Lock()
 		output.writer.Flush()
+		output.mutex.Unlock()
 	}
 }
 
@@ -57,13 +67,14 @@ func (channel *Channel) write(values ...interface{}) {
 
 	for _, output := range channel.outputs {
 		output.mutex.Lock()
-
 		output.writer.WriteString(now)
-		output.writer.WriteByte('\t')
 
-		fmt.Fprint(output.writer, values...)
+		for _, value := range values {
+			output.writer.WriteString(" | ")
+			fmt.Fprint(output.writer, value)
+		}
+
 		output.writer.WriteByte('\n')
-
 		output.mutex.Unlock()
 	}
 }
