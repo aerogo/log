@@ -1,7 +1,9 @@
 package log
 
 import (
+	"bufio"
 	"io"
+	"time"
 )
 
 // Channel is used for a specific part of your application, e.g. "web", "database", "api", etc.
@@ -22,7 +24,7 @@ func NewChannel(name string) *Channel {
 // AddOutput ...
 func (channel *Channel) AddOutput(writer io.Writer) {
 	output := &Output{
-		writer: writer,
+		writer: bufio.NewWriter(writer),
 	}
 
 	channel.outputs = append(channel.outputs, output)
@@ -30,15 +32,23 @@ func (channel *Channel) AddOutput(writer io.Writer) {
 
 // Info ...
 func (channel *Channel) Info(values ...string) {
+	now := time.Now().Format(time.StampMilli)
+
 	for _, output := range channel.outputs {
 		output.mutex.Lock()
 
-		for _, value := range values {
-			output.buffer.WriteString(value)
-		}
-		output.buffer.WriteByte('\n')
+		output.writer.WriteString(now)
+		output.writer.WriteByte('\t')
 
-		output.sync()
+		for num, value := range values {
+			output.writer.WriteString(value)
+
+			if num >= 1 {
+				output.writer.WriteByte(' ')
+			}
+		}
+		output.writer.WriteByte('\n')
+
 		output.mutex.Unlock()
 	}
 }

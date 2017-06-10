@@ -1,21 +1,12 @@
 package log
 
 import (
-	"bytes"
-	"io"
+	"bufio"
 	"sync"
 )
 
 // Output ...
 type Output struct {
-	buffer bytes.Buffer
-	writer io.Writer
+	writer *bufio.Writer
 	mutex  sync.Mutex
-}
-
-// sync ...
-func (output *Output) sync() {
-	data := output.buffer.Bytes()
-	output.writer.Write(data)
-	output.buffer.Reset()
 }

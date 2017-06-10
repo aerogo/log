@@ -1,10 +1,11 @@
 package log
 
 import (
-	"os"
 	"runtime"
 	"sync"
 	"testing"
+
+	"go.uber.org/zap"
 )
 
 func bench(b *testing.B, fun func()) {
@@ -30,10 +31,37 @@ func bench(b *testing.B, fun func()) {
 
 func BenchmarkAeroLog(b *testing.B) {
 	web := NewChannel("web")
-	file, _ := os.Create("aero.log")
-	web.AddOutput(file)
+	web.AddOutput(File("aero.log"))
 
-	bench(b, func() {
-		web.Info("Hello World")
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			web.Info("Hello World")
+		}
+	})
+}
+
+func BenchmarkZap(b *testing.B) {
+	config := zap.Config{
+		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
+		Development: false,
+		Sampling: &zap.SamplingConfig{
+			Initial:    100,
+			Thereafter: 100,
+		},
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"zap.log"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+	log, _ := config.Build()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			log.Info("Hello World")
+		}
 	})
 }
