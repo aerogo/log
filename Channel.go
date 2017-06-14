@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const separator = " | "
+
 // Channel is used for a specific part of your application, e.g. "web", "database", "api", etc.
 type Channel struct {
 	name    string
@@ -70,7 +72,7 @@ func (channel *Channel) write(values ...interface{}) {
 		output.writer.WriteString(now)
 
 		for _, value := range values {
-			output.writer.WriteString(" | ")
+			output.writer.WriteString(separator)
 			fmt.Fprint(output.writer, value)
 		}
 
