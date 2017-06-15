@@ -12,14 +12,15 @@ import (
 func BenchmarkAero(b *testing.B) {
 	os.Remove("aero.log")
 
-	web := NewChannel("web")
-	web.AddOutput(File("aero.log"))
+	log := NewLog()
+	log.AddOutput(File("aero.log"))
+	request := log.NewChannel("request")
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			web.Info("Hello World", 1, 2, 3, 4)
+			request.Info("Hello World", 1, 2, 3, 4)
 		}
 	})
 }
