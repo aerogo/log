@@ -14,8 +14,8 @@ type Log struct {
 	outputs []*Output
 }
 
-// NewLog ...
-func NewLog() *Log {
+// New ...
+func New() *Log {
 	log := &Log{}
 
 	go func() {
