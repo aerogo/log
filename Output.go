@@ -7,6 +7,7 @@ import (
 
 // Output ...
 type Output struct {
-	writer *bufio.Writer
-	mutex  sync.Mutex
+	writer        *bufio.Writer
+	mutex         sync.Mutex
+	messageBuffer []byte
 }

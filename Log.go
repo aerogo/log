@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strconv"
 	"time"
 )
 
@@ -66,14 +67,32 @@ func (log *Log) write(values ...interface{}) {
 
 	for _, output := range log.outputs {
 		output.mutex.Lock()
-		output.writer.WriteString(now)
+		b := append(output.messageBuffer, now...)
 
 		for _, value := range values {
-			output.writer.WriteString(separator)
-			fmt.Fprint(output.writer, value)
+			b = append(b, separator...)
+
+			switch value.(type) {
+			case string:
+				b = append(b, value.(string)...)
+			case int:
+				b = strconv.AppendInt(b, int64(value.(int)), 10)
+			case float64:
+				b = strconv.AppendFloat(b, value.(float64), 'f', 3, 64)
+			case float32:
+				b = strconv.AppendFloat(b, float64(value.(float32)), 'f', 3, 32)
+			case byte:
+				b = append(b, value.(byte))
+			case []byte:
+				b = append(b, value.([]byte)...)
+			default:
+				b = append(b, fmt.Sprint(value)...)
+			}
 		}
 
-		output.writer.WriteByte('\n')
+		b = append(b, '\n')
+		output.writer.Write(b)
+		output.messageBuffer = b[:0]
 		output.mutex.Unlock()
 	}
 }
