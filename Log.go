@@ -1,7 +1,6 @@
 package log
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"strconv"
@@ -9,6 +8,8 @@ import (
 )
 
 const separator = " | "
+const bufferSize = 8192
+const flushThreshold = bufferSize / 2
 
 // Log is used for a specific part of your application, e.g. "web", "database", "api", etc.
 type Log struct {
@@ -20,11 +21,8 @@ func New() *Log {
 	log := &Log{}
 
 	go func() {
-		ticker := time.NewTicker(250 * time.Millisecond)
-		defer ticker.Stop()
-
 		for {
-			<-ticker.C
+			time.Sleep(250 * time.Millisecond)
 			log.Flush()
 		}
 	}()
@@ -35,7 +33,8 @@ func New() *Log {
 // AddOutput ...
 func (log *Log) AddOutput(writer io.Writer) {
 	output := &Output{
-		writer: bufio.NewWriter(writer),
+		writer:        writer,
+		messageBuffer: make([]byte, 0, bufferSize),
 	}
 
 	log.outputs = append(log.outputs, output)
@@ -56,7 +55,8 @@ func (log *Log) Error(values ...interface{}) {
 func (log *Log) Flush() {
 	for _, output := range log.outputs {
 		output.mutex.Lock()
-		output.writer.Flush()
+		output.writer.Write(output.messageBuffer)
+		output.messageBuffer = output.messageBuffer[:0]
 		output.mutex.Unlock()
 	}
 }
@@ -78,9 +78,9 @@ func (log *Log) write(values ...interface{}) {
 			case int:
 				b = strconv.AppendInt(b, int64(value.(int)), 10)
 			case float64:
-				b = strconv.AppendFloat(b, value.(float64), 'f', 3, 64)
+				b = strconv.AppendFloat(b, value.(float64), 'f', 5, 64)
 			case float32:
-				b = strconv.AppendFloat(b, float64(value.(float32)), 'f', 3, 32)
+				b = strconv.AppendFloat(b, float64(value.(float32)), 'f', 5, 32)
 			case byte:
 				b = append(b, value.(byte))
 			case []byte:
@@ -91,8 +91,14 @@ func (log *Log) write(values ...interface{}) {
 		}
 
 		b = append(b, '\n')
-		output.writer.Write(b)
-		output.messageBuffer = b[:0]
+
+		if len(b) > flushThreshold {
+			output.writer.Write(b)
+			output.messageBuffer = b[:0]
+		} else {
+			output.messageBuffer = b
+		}
+
 		output.mutex.Unlock()
 	}
 }
