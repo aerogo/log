@@ -19,10 +19,11 @@ type Log struct {
 // New ...
 func New() *Log {
 	log := &Log{}
+	sleepTime := 250 * time.Millisecond
 
 	go func() {
 		for {
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(sleepTime)
 			log.Flush()
 		}
 	}()
