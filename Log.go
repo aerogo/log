@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -60,6 +61,12 @@ func (log *Log) Flush() {
 		output.messageBuffer = output.messageBuffer[:0]
 		output.mutex.Unlock()
 	}
+}
+
+// Write implements the io.Writer interface.
+func (log *Log) Write(b []byte) (int, error) {
+	log.write(bytes.TrimSpace(b))
+	return len(b), nil
 }
 
 // write ...

@@ -1,5 +1,7 @@
 package log
 
+import "bytes"
+
 // Channel ...
 type Channel struct {
 	Name string
@@ -9,7 +11,7 @@ type Channel struct {
 // NewChannel creates a new channel.
 func (log *Log) NewChannel(name string) *Channel {
 	return &Channel{
-		Name: name,
+		Name: "[" + name + "]",
 		log:  log,
 	}
 }
@@ -24,4 +26,10 @@ func (channel *Channel) Info(values ...interface{}) {
 func (channel *Channel) Error(values ...interface{}) {
 	values = append([]interface{}{channel.Name}, values...)
 	channel.log.Error(values...)
+}
+
+// Write implements the io.Writer interface.
+func (channel *Channel) Write(b []byte) (int, error) {
+	channel.log.Info(channel.Name, bytes.TrimSpace(b))
+	return len(b), nil
 }
