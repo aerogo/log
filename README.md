@@ -17,17 +17,10 @@ go get github.com/aerogo/log
 ## Example
 
 ```go
-// Create a new log
-hello := log.New()
-
-// Add an output
-hello.AddOutput(log.File("hello.log"))
-
-// Info writes non-critical data
-hello.Info("Hello World", 1, 2, 3)
-
-// Error forces an immediate I/O flush
-hello.Error("Something went wrong")
+hello := log.New()                     // Create a new log
+hello.AddOutput(log.File("hello.log")) // Add an output
+hello.Info("Hello World", 1, 2, 3)     // Write non-critical data (buffered)
+hello.Error("Something went wrong")    // Force an immediate I/O flush for error messages
 ```
 
 ## Author
