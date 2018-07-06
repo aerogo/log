@@ -16,7 +16,7 @@ const flushThreshold = bufferSize / 2
 // e.g. "web", "database", "api" or other categories. It can be connected
 // to multiple outputs.
 type Log struct {
-	outputs []*Output
+	outputs []*output
 }
 
 // New creates a new Log.
@@ -36,12 +36,12 @@ func New() *Log {
 
 // AddOutput adds an output to the log.
 func (log *Log) AddOutput(writer io.Writer) {
-	output := &Output{
+	out := &output{
 		writer:        writer,
 		messageBuffer: make([]byte, 0, bufferSize),
 	}
 
-	log.outputs = append(log.outputs, output)
+	log.outputs = append(log.outputs, out)
 }
 
 // Info writes non-critical information to the log.
