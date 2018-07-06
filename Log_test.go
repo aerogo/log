@@ -1,25 +1,54 @@
-package log
+package log_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	std "log"
 
+	"github.com/aerogo/log"
 	"go.uber.org/zap"
 )
+
+func TestAeroLog(t *testing.T) {
+	os.Remove("aero.log")
+
+	hello := log.New()
+	hello.AddOutput(log.File("aero.log"))
+
+	// Test all data types
+	hello.Info(
+		"Info message",
+		1,
+		float32(3.14),
+		3.14,
+		byte('b'),
+		[]byte("some bytes"),
+		hello,
+	)
+
+	// Force a flush with a big enough message
+	hello.Info(strings.Repeat("X", 32767))
+
+	// Use standard Write method
+	hello.Write([]byte("some bytes"))
+
+	// Error
+	hello.Error("Error message")
+}
 
 func BenchmarkAero(b *testing.B) {
 	os.Remove("aero.log")
 
-	log := New()
-	log.AddOutput(File("aero.log"))
+	hello := log.New()
+	hello.AddOutput(log.File("aero.log"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Info("Hello World")
+			hello.Info("Hello World")
 		}
 	})
 }
@@ -39,13 +68,13 @@ func BenchmarkZap(b *testing.B) {
 		OutputPaths:      []string{"zap.log"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
-	log, _ := config.Build()
+	hello, _ := config.Build()
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Info("Hello World")
+			hello.Info("Hello World")
 		}
 	})
 }
@@ -65,8 +94,8 @@ func BenchmarkZapSugar(b *testing.B) {
 		OutputPaths:      []string{"zapsugar.log"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
-	log, _ := config.Build()
-	sugar := log.Sugar()
+	hello, _ := config.Build()
+	sugar := hello.Sugar()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -81,13 +110,15 @@ func BenchmarkStd(b *testing.B) {
 	os.Remove("std.log")
 
 	f, _ := os.Create("std.log")
-	stdLog := std.New(f, "", 0)
+	defer f.Close()
+
+	hello := std.New(f, "", 0)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			stdLog.Println("Hello World")
+			hello.Println("Hello World")
 		}
 	})
 }
@@ -95,14 +126,14 @@ func BenchmarkStd(b *testing.B) {
 func BenchmarkAero5(b *testing.B) {
 	os.Remove("aero5.log")
 
-	log := New()
-	log.AddOutput(File("aero5.log"))
+	hello := log.New()
+	hello.AddOutput(log.File("aero5.log"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Info("Hello World", 1, 2, 3.14, 4)
+			hello.Info("Hello World", 1, 2, 3.14, 4)
 		}
 	})
 }
@@ -122,13 +153,13 @@ func BenchmarkZap5(b *testing.B) {
 		OutputPaths:      []string{"zap5.log"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
-	log, _ := config.Build()
+	hello, _ := config.Build()
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			log.Info(
+			hello.Info(
 				"Hello World",
 				zap.Int("a", 1),
 				zap.Int("b", 2),
@@ -154,8 +185,8 @@ func BenchmarkZapSugar5(b *testing.B) {
 		OutputPaths:      []string{"zapsugar5.log"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
-	log, _ := config.Build()
-	sugar := log.Sugar()
+	hello, _ := config.Build()
+	sugar := hello.Sugar()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -170,13 +201,13 @@ func BenchmarkStd5(b *testing.B) {
 	os.Remove("std5.log")
 
 	f, _ := os.Create("std5.log")
-	stdLog := std.New(f, "", 0)
+	hello := std.New(f, "", 0)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			stdLog.Println("Hello World", 1, 2, 3.14, 4)
+			hello.Println("Hello World", 1, 2, 3.14, 4)
 		}
 	})
 }

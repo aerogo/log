@@ -12,12 +12,14 @@ const separator = " | "
 const bufferSize = 8192
 const flushThreshold = bufferSize / 2
 
-// Log is used for a specific part of your application, e.g. "web", "database", "api", etc.
+// Log is a log data source used for a specific part of your application,
+// e.g. "web", "database", "api" or other categories. It can be connected
+// to multiple outputs.
 type Log struct {
 	outputs []*Output
 }
 
-// New ...
+// New creates a new Log.
 func New() *Log {
 	log := &Log{}
 	sleepTime := 250 * time.Millisecond
@@ -32,7 +34,7 @@ func New() *Log {
 	return log
 }
 
-// AddOutput ...
+// AddOutput adds an output to the log.
 func (log *Log) AddOutput(writer io.Writer) {
 	output := &Output{
 		writer:        writer,
@@ -42,18 +44,23 @@ func (log *Log) AddOutput(writer io.Writer) {
 	log.outputs = append(log.outputs, output)
 }
 
-// Info ...
+// Info writes non-critical information to the log.
+// Unlike Error, it does not guarantee that the message will have been
+// written persistenly to disk at the time this function returns.
 func (log *Log) Info(values ...interface{}) {
 	log.write(values...)
 }
 
-// Error ...
+// Error writes critical information to the log.
+// It will instantly flush the I/O buffers and guarantees that the message
+// will have been written persistenly to disk at the time this function returns.
 func (log *Log) Error(values ...interface{}) {
 	log.write(values...)
 	log.Flush()
 }
 
-// Flush ...
+// Flush forces the currently buffered data to be flushed to all outputs.
+// A flush usually guarantees that the data has been written permanently to disk.
 func (log *Log) Flush() {
 	for _, output := range log.outputs {
 		output.mutex.Lock()
@@ -69,7 +76,7 @@ func (log *Log) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-// write ...
+// write is the core function implementing the serialization of data types.
 func (log *Log) write(values ...interface{}) {
 	now := time.Now().Format(time.StampMilli)
 
