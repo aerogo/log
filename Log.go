@@ -8,9 +8,11 @@ import (
 	"time"
 )
 
-const separator = " | "
-const bufferSize = 8192
-const flushThreshold = bufferSize / 2
+const (
+	separator      = " | "
+	bufferSize     = 8192
+	flushThreshold = bufferSize / 2
+)
 
 // Log is a log data source used for a specific part of your application,
 // e.g. "web", "database", "api" or other categories. It can be connected
