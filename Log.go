@@ -87,19 +87,19 @@ func (log *Log) write(values ...interface{}) {
 		for _, value := range values {
 			b = append(b, separator...)
 
-			switch value.(type) {
+			switch value := value.(type) {
 			case string:
-				b = append(b, value.(string)...)
+				b = append(b, value...)
 			case int:
-				b = strconv.AppendInt(b, int64(value.(int)), 10)
+				b = strconv.AppendInt(b, int64(value), 10)
 			case float64:
-				b = strconv.AppendFloat(b, value.(float64), 'f', 5, 64)
+				b = strconv.AppendFloat(b, value, 'f', 5, 64)
 			case float32:
-				b = strconv.AppendFloat(b, float64(value.(float32)), 'f', 5, 32)
+				b = strconv.AppendFloat(b, float64(value), 'f', 5, 32)
 			case byte:
-				b = append(b, value.(byte))
+				b = append(b, value)
 			case []byte:
-				b = append(b, value.([]byte)...)
+				b = append(b, value...)
 			default:
 				b = append(b, fmt.Sprint(value)...)
 			}
