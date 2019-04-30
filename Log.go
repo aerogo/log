@@ -25,6 +25,7 @@ type Log struct {
 // New creates a new Log.
 func New() *Log {
 	log := &Log{}
+	log.outputs.Store([]*output{})
 	sleepTime := 250 * time.Millisecond
 
 	go func() {
@@ -44,7 +45,8 @@ func (log *Log) AddOutput(writer io.Writer) {
 		messageBuffer: make([]byte, 0, bufferSize),
 	}
 
-	log.outputs.Store([]*output{out})
+	newOutputs := append(log.outputs.Load().([]*output), out)
+	log.outputs.Store(newOutputs)
 }
 
 // Info writes non-critical information to the log.
