@@ -1,9 +1,9 @@
 # log
 
-[![Godoc reference][godoc-image]][godoc-url]
-[![Go report card][goreportcard-image]][goreportcard-url]
-[![Tests][travis-image]][travis-url]
-[![Code coverage][codecov-image]][codecov-url]
+[![Reference][godoc-image]][godoc-url]
+[![Report][report-image]][report-url]
+[![Tests][tests-image]][tests-url]
+[![Coverage][codecov-image]][codecov-url]
 [![License][license-image]][license-url]
 
 A logging system that allows you to connect one log to multiple outputs (e.g. file system).
@@ -32,11 +32,11 @@ hello.Error("Something went wrong")    // Force an immediate I/O flush for error
 
 [godoc-image]: https://godoc.org/github.com/aerogo/log?status.svg
 [godoc-url]: https://godoc.org/github.com/aerogo/log
-[goreportcard-image]: https://goreportcard.com/badge/github.com/aerogo/log
-[goreportcard-url]: https://goreportcard.com/report/github.com/aerogo/log
-[travis-image]: https://travis-ci.org/aerogo/log.svg?branch=master
-[travis-url]: https://travis-ci.org/aerogo/log
-[codecov-image]: https://codecov.io/gh/aerogo/log/branch/master/graph/badge.svg
+[report-image]: https://goreportcard.com/badge/github.com/aerogo/log
+[report-url]: https://goreportcard.com/report/github.com/aerogo/log
+[tests-image]: https://cloud.drone.io/api/badges/aerogo/log/status.svg
+[tests-url]: https://cloud.drone.io/aerogo/log
+[codecov-image]: https://codecov.io/gh/aerogo/log/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/aerogo/log
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg
 [license-url]: https://github.com/aerogo/log/blob/master/LICENSE

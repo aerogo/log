@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"sync/atomic"
 	"time"
 )
 
@@ -18,7 +19,7 @@ const (
 // e.g. "web", "database", "api" or other categories. It can be connected
 // to multiple outputs.
 type Log struct {
-	outputs []*output
+	outputs atomic.Value
 }
 
 // New creates a new Log.
@@ -43,7 +44,7 @@ func (log *Log) AddOutput(writer io.Writer) {
 		messageBuffer: make([]byte, 0, bufferSize),
 	}
 
-	log.outputs = append(log.outputs, out)
+	log.outputs.Store([]*output{out})
 }
 
 // Info writes non-critical information to the log.
@@ -64,9 +65,14 @@ func (log *Log) Error(values ...interface{}) {
 // Flush forces the currently buffered data to be flushed to all outputs.
 // A flush usually guarantees that the data has been written permanently to disk.
 func (log *Log) Flush() {
-	for _, output := range log.outputs {
+	for _, output := range log.outputs.Load().([]*output) {
 		output.mutex.Lock()
-		output.writer.Write(output.messageBuffer)
+		_, err := output.writer.Write(output.messageBuffer)
+
+		if err != nil {
+			fmt.Println("Error flushing log buffers:", err)
+		}
+
 		output.messageBuffer = output.messageBuffer[:0]
 		output.mutex.Unlock()
 	}
@@ -82,7 +88,7 @@ func (log *Log) Write(b []byte) (int, error) {
 func (log *Log) write(values ...interface{}) {
 	now := time.Now().Format(time.StampMilli)
 
-	for _, output := range log.outputs {
+	for _, output := range log.outputs.Load().([]*output) {
 		output.mutex.Lock()
 		b := append(output.messageBuffer, now...)
 
@@ -110,7 +116,12 @@ func (log *Log) write(values ...interface{}) {
 		b = append(b, '\n')
 
 		if len(b) > flushThreshold {
-			output.writer.Write(b)
+			_, err := output.writer.Write(b)
+
+			if err != nil {
+				fmt.Println("Error flushing log buffers:", err)
+			}
+
 			output.messageBuffer = b[:0]
 		} else {
 			output.messageBuffer = b
