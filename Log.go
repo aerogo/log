@@ -62,7 +62,9 @@ func (log *Log) Error(format string, values ...interface{}) {
 // this call will not block and have O(1) behaviour,
 // regardless of how many writers are used.
 func (log *Log) Write(b []byte) (n int, err error) {
-	log.messages <- b
+	tmp := make([]byte, len(b))
+	copy(tmp, b)
+	log.messages <- tmp
 	return len(b), nil
 }
 

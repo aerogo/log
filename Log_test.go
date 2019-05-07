@@ -37,17 +37,25 @@ func (writer *zeroWriter) Write(buffer []byte) (int, error) {
 	return 0, nil
 }
 
-func TestInfoError(t *testing.T) {
+func TestBasicLogging(t *testing.T) {
 	fileWriter := log.File("hello.log")
 	defer os.Remove("hello.log")
 	defer fileWriter.Close()
 
+	fileWriter2 := log.File("hello2.log")
+	defer os.Remove("hello2.log")
+	defer fileWriter2.Close()
+
+	fileWriter3 := log.File("hello3.log")
+	defer os.Remove("hello3.log")
+	defer fileWriter3.Close()
+
 	errorWriter := &writerWithError{
-		Writer: fileWriter,
+		Writer: fileWriter2,
 	}
 
 	zero := &zeroWriter{
-		Writer: fileWriter,
+		Writer: fileWriter3,
 	}
 
 	hello := log.New()
