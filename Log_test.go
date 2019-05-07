@@ -37,21 +37,23 @@ func (writer *zeroWriter) Write(buffer []byte) (int, error) {
 	return 0, nil
 }
 
-func TestFprintf(t *testing.T) {
+func TestInfoError(t *testing.T) {
+	fileWriter := log.File("hello.log")
 	defer os.Remove("hello.log")
-	defer os.Remove("fail.log")
-	defer os.Remove("zero.log")
+	defer fileWriter.Close()
+
+	errorWriter := &writerWithError{
+		Writer: fileWriter,
+	}
+
+	zero := &zeroWriter{
+		Writer: fileWriter,
+	}
 
 	hello := log.New()
-	hello.AddWriter(log.File("hello.log"))
-
-	hello.AddWriter(&writerWithError{
-		Writer: log.File("fail.log"),
-	})
-
-	hello.AddWriter(&zeroWriter{
-		Writer: log.File("zero.log"),
-	})
+	hello.AddWriter(fileWriter)
+	hello.AddWriter(errorWriter)
+	hello.AddWriter(zero)
 
 	hello.Info(
 		"Info message %d %f %f %s",
