@@ -11,11 +11,6 @@ const (
 	bufferCapacity = 1024
 )
 
-var (
-	// newLine as a byte slice
-	newLine = []byte("\n")
-)
-
 // Log is a log data source used for a specific part of your application,
 // e.g. "web", "database", "api" or other categories. It can be connected
 // to multiple writers.
