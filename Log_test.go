@@ -1,214 +1,91 @@
 package log_test
 
 import (
+	"errors"
+	"io"
 	"os"
-	"strings"
 	"testing"
+	"time"
 
 	"github.com/aerogo/log"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestAeroLog(t *testing.T) {
-	os.Remove("aero.log")
+// writerWithError errors the Write call after `successfulWrites` writes.
+type writerWithError struct {
+	io.Writer
+
+	countWrites      int
+	successfulWrites int
+}
+
+func (writer *writerWithError) Write(buffer []byte) (int, error) {
+	if writer.countWrites == writer.successfulWrites {
+		return 0, errors.New("Artificial error")
+	}
+
+	writer.countWrites++
+	return writer.Write(buffer)
+}
+
+// zeroWriter always writes zero bytes.
+type zeroWriter struct {
+	io.Writer
+}
+
+func (writer *zeroWriter) Write(buffer []byte) (int, error) {
+	return 0, nil
+}
+
+func TestFprintf(t *testing.T) {
+	defer os.Remove("hello.log")
+	defer os.Remove("fail.log")
+	defer os.Remove("zero.log")
 
 	hello := log.New()
-	hello.AddOutput(log.File("aero.log"))
+	hello.AddWriter(log.File("hello.log"))
 
-	// Test all data types
+	hello.AddWriter(&writerWithError{
+		Writer: log.File("fail.log"),
+	})
+
+	hello.AddWriter(&zeroWriter{
+		Writer: log.File("zero.log"),
+	})
+
 	hello.Info(
-		"Info message",
+		"Info message %d %f %f %s",
 		1,
 		float32(3.14),
 		3.14,
-		byte('b'),
-		[]byte("some bytes"),
-		hello,
+		"some text",
 	)
 
-	// Force a flush with a big enough message
-	hello.Info(strings.Repeat("X", 32767))
-
-	// Use standard Write method
-	_, err := hello.Write([]byte("some bytes"))
-
-	if err != nil {
-		t.Fail()
-	}
-
-	// Error
-	hello.Error("Error message")
+	hello.Error("Oh noes %s", "Something went wrong")
+	time.Sleep(500 * time.Millisecond)
 }
 
-func BenchmarkAero(b *testing.B) {
-	os.Remove("aero.log")
+func TestInvalidFilePath(t *testing.T) {
+	defer func() {
+		err := recover()
+		assert.NotNil(t, err)
+	}()
+
+	log.File("")
+}
+
+func BenchmarkInfo(b *testing.B) {
+	defer os.Remove("hello.log")
 
 	hello := log.New()
-	hello.AddOutput(log.File("aero.log"))
+	hello.AddWriter(log.File("hello.log"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
+
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			hello.Info("Hello World")
 		}
 	})
 }
-
-// func BenchmarkZap(b *testing.B) {
-// 	os.Remove("zap.log")
-
-// 	config := zap.Config{
-// 		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
-// 		Development: false,
-// 		Sampling: &zap.SamplingConfig{
-// 			Initial:    100,
-// 			Thereafter: 100,
-// 		},
-// 		Encoding:         "console",
-// 		EncoderConfig:    zap.NewProductionEncoderConfig(),
-// 		OutputPaths:      []string{"zap.log"},
-// 		ErrorOutputPaths: []string{"stderr"},
-// 	}
-// 	hello, _ := config.Build()
-
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			hello.Info("Hello World")
-// 		}
-// 	})
-// }
-
-// func BenchmarkZapSugar(b *testing.B) {
-// 	os.Remove("zapsugar.log")
-
-// 	config := zap.Config{
-// 		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
-// 		Development: false,
-// 		Sampling: &zap.SamplingConfig{
-// 			Initial:    100,
-// 			Thereafter: 100,
-// 		},
-// 		Encoding:         "console",
-// 		EncoderConfig:    zap.NewProductionEncoderConfig(),
-// 		OutputPaths:      []string{"zapsugar.log"},
-// 		ErrorOutputPaths: []string{"stderr"},
-// 	}
-// 	hello, _ := config.Build()
-// 	sugar := hello.Sugar()
-
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			sugar.Info("Hello World")
-// 		}
-// 	})
-// }
-
-// func BenchmarkStd(b *testing.B) {
-// 	os.Remove("std.log")
-
-// 	f, _ := os.Create("std.log")
-// 	defer f.Close()
-
-// 	hello := std.New(f, "", 0)
-
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			hello.Println("Hello World")
-// 		}
-// 	})
-// }
-
-func BenchmarkAero5(b *testing.B) {
-	os.Remove("aero5.log")
-
-	hello := log.New()
-	hello.AddOutput(log.File("aero5.log"))
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			hello.Info("Hello World", 1, 2, 3.14, 4)
-		}
-	})
-}
-
-// func BenchmarkZap5(b *testing.B) {
-// 	os.Remove("zap5.log")
-
-// 	config := zap.Config{
-// 		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
-// 		Development: false,
-// 		Sampling: &zap.SamplingConfig{
-// 			Initial:    100,
-// 			Thereafter: 100,
-// 		},
-// 		Encoding:         "console",
-// 		EncoderConfig:    zap.NewProductionEncoderConfig(),
-// 		OutputPaths:      []string{"zap5.log"},
-// 		ErrorOutputPaths: []string{"stderr"},
-// 	}
-// 	hello, _ := config.Build()
-
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			hello.Info(
-// 				"Hello World",
-// 				zap.Int("a", 1),
-// 				zap.Int("b", 2),
-// 				zap.Float64("c", 3.14),
-// 				zap.Int("d", 4),
-// 			)
-// 		}
-// 	})
-// }
-
-// func BenchmarkZapSugar5(b *testing.B) {
-// 	os.Remove("zapsugar5.log")
-
-// 	config := zap.Config{
-// 		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
-// 		Development: false,
-// 		Sampling: &zap.SamplingConfig{
-// 			Initial:    100,
-// 			Thereafter: 100,
-// 		},
-// 		Encoding:         "console",
-// 		EncoderConfig:    zap.NewProductionEncoderConfig(),
-// 		OutputPaths:      []string{"zapsugar5.log"},
-// 		ErrorOutputPaths: []string{"stderr"},
-// 	}
-// 	hello, _ := config.Build()
-// 	sugar := hello.Sugar()
-
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			sugar.Info("Hello World", 1, 2, 3.14, 4)
-// 		}
-// 	})
-// }
-
-// func BenchmarkStd5(b *testing.B) {
-// 	os.Remove("std5.log")
-
-// 	f, _ := os.Create("std5.log")
-// 	hello := std.New(f, "", 0)
-
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			hello.Println("Hello World", 1, 2, 3.14, 4)
-// 		}
-// 	})
-// }
