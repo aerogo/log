@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/aerogo/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/akyoto/assert"
 )
 
 // writerWithError errors the Write call after `successfulWrites` writes.
